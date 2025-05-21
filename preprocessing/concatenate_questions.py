@@ -75,6 +75,6 @@ def write_to_excel_grouped(questions_dict, output_file):
 
 
 
-questions_data = extract_questions_and_tables("C:/Users/hanna/OneDrive - Universität des Saarlandes/Dokumente/Semester_10/data science/mini_test_data.xlsx"
+questions_data = extract_questions_and_tables("C:/Your-Path/data.xlsx"
 )
 write_to_excel_grouped(questions_data, "processed_output.xlsx")
