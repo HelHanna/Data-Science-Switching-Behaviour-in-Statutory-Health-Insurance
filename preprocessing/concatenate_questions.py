@@ -1,6 +1,15 @@
+#!/usr/bin/env python3
+
+import pathlib
+import re
+
 import pandas as pd
-from openpyxl import Workbook
-from openpyxl.utils.dataframe import dataframe_to_rows
+
+
+def sanitize_sheet_name(name):
+    # Replace invalid characters with an underscore
+    return re.sub(r'[\\/*?:$$$$]', '_', name)
+
 
 def extract_questions_and_tables(filepath):
     # Load the file
@@ -34,47 +43,24 @@ def extract_questions_and_tables(filepath):
 
     return questions_dict
 
-
 def write_to_excel_grouped(questions_dict, output_file):
-    from openpyxl import Workbook
-    from openpyxl.utils.dataframe import dataframe_to_rows
-    import pandas as pd
+    with pd.ExcelWriter(output_file) as writer:  # , engine='xlsxwriter'
+        for i, v in enumerate(questions_dict):
+            question, tables = v, questions_dict[v]
 
-    wb = Workbook()
-    wb.remove(wb.active)  # remove default sheet
+            first_two_columns = tables[0].iloc[:, :2]
+            remaining_columns = pd.concat([df.iloc[:, 2:] for df in tables], axis=1)
+            combined_df = pd.concat([first_two_columns, remaining_columns], axis=1)
 
-    for question, tables in questions_dict.items():
-        ws = wb.create_sheet(title=question[:31])  # Excel sheet name max 31 chars
-        ws.append([question])
-        ws.append([])
+            # Sanitize the sheet name
+            sanitized_sheet_name = sanitize_sheet_name(f'{i:03} {question[:27]}')
 
-        combined_tables = []
-
-        for i, df in enumerate(tables):
-            df = df.copy()
-
-            df.columns = [str(col).strip() for col in df.columns]
-
-            if i == 0:
-                # Keep full table including first two columns
-                combined_tables.append(df.reset_index(drop=True))
-            else:
-                # Remove the first two columns for all following subtables
-                df_trimmed = df.iloc[:, 2:].reset_index(drop=True)
-                combined_tables.append(df_trimmed)
-
-
-        # Horizontales Zusammenfügen der bereinigten Tabellen
-        combined = pd.concat(combined_tables, axis=1)
-
-        # Schreibe die Daten ins Excel-Blatt
-        for row in dataframe_to_rows(combined, index=False, header=False):
-            ws.append(row)
-
-    wb.save(output_file)
+            # Write the combined table to a new sheet
+            combined_df.to_excel(writer, sheet_name=sanitized_sheet_name, index=False, header=False)
 
 
 
-questions_data = extract_questions_and_tables("C:/Your-Path/data.xlsx"
-)
+in_file = pathlib.Path('../data/Kundenmonitor_GKV_2023.xlsx')
+# in_file = pathlib.Path('/dev/shm/u.xlsx')
+questions_data = extract_questions_and_tables(in_file)
 write_to_excel_grouped(questions_data, "processed_output.xlsx")
