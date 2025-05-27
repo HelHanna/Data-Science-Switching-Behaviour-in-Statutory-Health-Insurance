@@ -2,7 +2,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
 
 # Load the merged model and tokenizer
-model_path = "/LLM_tuning/merged_llama3"
+model_path = "/LLM_tuning/llama_finetuned"
 
 tokenizer = AutoTokenizer.from_pretrained(model_path)
 model = AutoModelForCausalLM.from_pretrained(
