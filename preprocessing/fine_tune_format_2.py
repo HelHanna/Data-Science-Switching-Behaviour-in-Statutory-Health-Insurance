@@ -53,14 +53,14 @@ def generate_prompt(row):
         qname = question_labels.get(col, col)
         main_qid = col.split(".")[0]
 
-        # Multi Select (0/1) sammeln
-        if qtype == "Multiple Select":  # Achte auf exakten Typnamen hier
+        # search for Multiple Select columns
+        if qtype == "Multiple Select":  
             if int(val) == 1:
                 label = question_map.get(col, {}).get("1", full_question_labels.get(col, qname))
                 multi_select_answers.setdefault(main_qid, {"name": question_labels.get(main_qid, main_qid), "labels": []})
                 multi_select_answers[main_qid]["labels"].append(label)
 
-        # Subquestions gruppieren
+        # group subquestions together
         elif "." in col:
             sub_label = subquestion_texts.get(col, full_question_labels.get(col, qname))
 
@@ -76,7 +76,7 @@ def generate_prompt(row):
                 }
             grouped_subquestions[main_qid]["answers"].append((col, sub_label, answer_label))
 
-        # Einzelne Fragen ohne Subfrage
+        # questions without subquestions
         else:
             prefix = f"{col} ({qname})"
             if qtype in ["Single Select", "Dropdown"]:
@@ -101,12 +101,10 @@ def generate_prompt(row):
             else:
                 parts.append(f"- {prefix}: {val}")
 
-    # Multi Select Antworten zusammenfassen
     for qid, info in multi_select_answers.items():
         labels_joined = ", ".join(info["labels"])
         parts.append(f"- {qid} ({info['name']}): {labels_joined}")
 
-    # Gruppierte Subquestions ausgeben
     for qid, info in grouped_subquestions.items():
         parts.append(f"{qid} ({info['main_label']}):")
         for col, sub_label, answer_label in info["answers"]:
@@ -122,4 +120,4 @@ answers_df["prompt"] = answers_df.apply(generate_prompt, axis=1)
 # Save output
 answers_df[["pid", "prompt"]].to_csv("participant_prompts.csv", index=False)
 
-print("✅ Prompts generated and saved to 'participant_prompts.csv'")
+print("Prompts generated and saved to 'participant_prompts.csv'")

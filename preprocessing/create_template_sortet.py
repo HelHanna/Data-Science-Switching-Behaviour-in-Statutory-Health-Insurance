@@ -3,7 +3,6 @@ import re
 import json
 
 def extract_field(text, label):
-    # Regex sucht nach dem Label mit ": <Wert>" danach
     match = re.search(rf"- {label}\):\s*(.+)", text)
     if match:
         value = match.group(1).strip()
@@ -44,7 +43,6 @@ FIELDS_GROUPED = {
     "Nutzung & Wechsel": [
     (r"Q9 \(S07: Usage", "ist bei der {} versichert"),
     (r"Q10 \(S07a: Usage detail", "genauer bei {} versichert"),
-    #(r"Q11 \(S07_dummy", "bei {} versichert"),
     (r"Q12 \(S08: Time of consideration change", "hat über einen Wechsel {} nachgedacht"),
     (r"Q14 \(S10: Number of changes", "hat {} die Versicherung gewechselt"),
     (r"Q15 \(S11: Change from PKV to GKV", "hat von der PKV zur GKV gewechselt: {}"),
@@ -174,7 +172,7 @@ FIELDS_GROUPED = {
     
 }
 
-# Fixed prompt instruction
+# prompt instruction 
 prompt_intro = (
     "Eine Person hat folgende Eigenschaften und hat folgende Angaben gemacht. "
     "Auf Basis dieser Informationen: Wird diese Person ihre Krankenversicherung in den nächsten 6 Monaten wechseln? "
@@ -201,28 +199,16 @@ def generate_summary_from_text(text):
     return "\n\n".join(prompt_parts)
 
 
-
-
-
-# CSV laden
+# load csv
 df = pd.read_csv("participant_prompts.csv")
-#df = pd.read_csv("C:/Users/hanna/OneDrive - Universität des Saarlandes/Dokumente/Semester_10/data science/preprocessing/participant_prompts.csv")
-
-# JSONL schreiben
-# with open("participant_prompts.jsonl", "w", encoding="utf-8") as f:
-#     for _, row in df.iterrows():
-#         summary = generate_summary_from_text(row['prompt'])  # <- passt hier, weil die Spalte prompt heißt
-#         f.write(json.dumps({"prompt": summary}, ensure_ascii=False) + "\n")
-
 
 with open("participant_prompts.jsonl", "w", encoding="utf-8") as f:
     for _, row in df.iterrows():
         summary = generate_summary_from_text(row['prompt'])
-        #completion = extract_field(row['prompt'], r"Q18 \(S17: Final Wording Dummy (hidden variable)")
         completion = extract_field(row['prompt'], r"Q18 \(S17.*")
 
         
-        if completion:  # only write rows where Q19 is present and valid
+        if completion: 
             f.write(json.dumps({
                 "prompt": summary,
                 "completion": completion

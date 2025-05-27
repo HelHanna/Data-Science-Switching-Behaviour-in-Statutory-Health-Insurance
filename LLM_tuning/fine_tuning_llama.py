@@ -7,24 +7,26 @@ from transformers import (
     DataCollatorForLanguageModeling,
     BitsAndBytesConfig,
     TrainerCallback,
+    EarlyStoppingCallback,
 )
 from peft import LoraConfig, get_peft_model
 import torch
-import os
 
-# 1. Parameter
+
+
+# set your parameters: which model to use, your access keys, directories etc.
 MODEL_NAME = "meta-llama/Llama-3.1-8B-Instruct"
-HF_TOKEN = "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"
-DATA_PATH = "participant_prompts.jsonl"
-OUTPUT_DIR = "/nethome/hhelbig/Neural_Networks/LLM_tuning/llama_test"
-LOG_DIR = "/nethome/hhelbig/Neural_Networks/LLM_tuning/llama3-test-finetuned"
+HF_TOKEN = "YOUR_HUGGINGFACE_TOKEN"
+DATA_PATH = "preprocessing/participant_prompts.jsonl"
+OUTPUT_DIR = "OUTPUT_DIR"
+LOG_DIR = "LOG_DIR"
 MAX_LENGTH = 2048
 
-# 2. Tokenizer laden
+# load the tokenizer
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, use_fast=True, use_auth_token=HF_TOKEN)
 tokenizer.pad_token = tokenizer.eos_token
 
-# 3. Quantization config
+# quantization config
 bnb_config = BitsAndBytesConfig(
     load_in_4bit=True,
     bnb_4bit_use_double_quant=True,
@@ -32,7 +34,7 @@ bnb_config = BitsAndBytesConfig(
     bnb_4bit_compute_dtype=torch.float16,
 )
 
-# 4. Modell laden
+# load the model
 model = AutoModelForCausalLM.from_pretrained(
     MODEL_NAME,
     quantization_config=bnb_config,
@@ -41,7 +43,7 @@ model = AutoModelForCausalLM.from_pretrained(
     torch_dtype=torch.float16,
 )
 
-# 5. LoRA anwenden
+# use lora
 lora_config = LoraConfig(
     r=8,
     lora_alpha=32,
@@ -52,7 +54,7 @@ lora_config = LoraConfig(
 )
 model = get_peft_model(model, lora_config)
 
-# 6. Dataset laden & splitten
+# load dataset and split into training and test set
 dataset = load_dataset("json", data_files=DATA_PATH)["train"]
 dataset = dataset.train_test_split(test_size=0.1, seed=42)
 
@@ -78,14 +80,14 @@ eval_dataset = eval_dataset.map(tokenize, remove_columns=["text"])
 
 data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)
 
-# 7. Training arguments mit Early Stopping (via Callback)
+# define training arguments
 training_args = TrainingArguments(
     output_dir=OUTPUT_DIR,
     per_device_train_batch_size=4,
     gradient_accumulation_steps=2,
-    num_train_epochs=20,  # mehr Epochs
+    num_train_epochs=20,  # set a number of epochs
     save_strategy="epoch",
-    eval_strategy="epoch",  # evaliere jedes Epoch-Ende
+    eval_strategy="epoch",  
     save_total_limit=2,
     logging_dir=LOG_DIR,
     logging_steps=10,
@@ -94,15 +96,13 @@ training_args = TrainingArguments(
     weight_decay=0.01,
     fp16=True,
     report_to="tensorboard",
-    load_best_model_at_end=True,  # bestes Modell nach Early Stopping laden
-    metric_for_best_model="eval_loss",  # welche Metrik nutzen
+    load_best_model_at_end=True,  # load best model after early stopping
+    metric_for_best_model="eval_loss",  # define the metric
     greater_is_better=False,
 )
 
-from transformers import EarlyStoppingCallback
-
-
-    
+# this class adds test prompts between the epochs to check for the quality. 
+# adjust according to your needs or delete if its not needed
 class ExampleGenerationCallback(TrainerCallback):
     def __init__(self, tokenizer, model):
         self.tokenizer = tokenizer
@@ -111,7 +111,7 @@ class ExampleGenerationCallback(TrainerCallback):
     def on_epoch_end(self, args, state, control, **kwargs):
         test_prompts = [
             "Eine Person hat folgende Eigenschaften und hat folgende Angaben gemacht. ..."
-            # (dein langer Testprompt hier)
+            # Your test prompt here
         ]
         self.model.eval()
         for prompt in test_prompts:
@@ -133,12 +133,12 @@ trainer = Trainer(
 )
 
 
-# 9. Training starten
+# start training
 trainer.train()
 print("Training abgeschlossen")
 
-# 10. Modell speichern
+# save the model
 trainer.save_model(OUTPUT_DIR)
 tokenizer.save_pretrained(OUTPUT_DIR)
 model.save_pretrained(OUTPUT_DIR)
-print(f"✅ Fine-tuning complete. Model saved to {OUTPUT_DIR}")
+print(f"Fine-tuning complete. Model saved to {OUTPUT_DIR}")

@@ -1,14 +1,13 @@
+import os
 import json
 import openai
-import os
 import pandas as pd
-from pprint import pprint
 from pathlib import Path
 from openai import OpenAI
 from dotenv import load_dotenv
 
 # Load API key from .env file
-env_path = Path('C:/Users/hanna/OneDrive - Universität des Saarlandes/Dokumente/Hiwi 09.2024/task generation/Mareikes_key.env')
+env_path = Path("Path to your Openai key")
 load_dotenv(dotenv_path=env_path)
 
 api_key = os.getenv("OPENAI_API_KEY")
@@ -20,10 +19,8 @@ else:
 
 client = OpenAI(api_key=api_key)
 
-
-
-training_file_name = "train_openai.jsonl"
-validation_file_name = "val_openai.jsonl"
+training_file_name = "prompts_gpt/train_openai.jsonl"
+validation_file_name = "prompts_gpt/val_openai.jsonl"
 
 def upload_file(file_name: str, purpose: str) -> str:
     with open(file_name, "rb") as file_fd:
