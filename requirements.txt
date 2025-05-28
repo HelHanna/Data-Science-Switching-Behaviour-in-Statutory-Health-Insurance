@@ -1,0 +1,9 @@
+pandas
+numpy
+scikit-learn
+shap
+openai
+nltk
+json
+ast
+requests
