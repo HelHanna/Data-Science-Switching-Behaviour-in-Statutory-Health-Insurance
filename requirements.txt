@@ -5,3 +5,5 @@ shap
 openai
 nltk
 requests
+lightgbm 
+rapidfuzz
