@@ -4,6 +4,7 @@ matplotlib
 nltk
 numpy
 openai
+openpyxl
 pandas
 peft
 python-dotenv
