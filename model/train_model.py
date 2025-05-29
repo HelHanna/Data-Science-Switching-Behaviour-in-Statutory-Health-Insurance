@@ -4,6 +4,7 @@ import lightgbm as lgb
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, accuracy_score, f1_score
 from preprocessing import Preprocessing
+import shap
 
 
 def train_lightgbm(X, y, test_size=0.2, random_state=42):
