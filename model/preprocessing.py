@@ -23,17 +23,19 @@ class Preprocessing:
     with open("feature_dict.json", encoding="utf-8") as f:
         feature_dict = json.load(f)
 
-    def __init__(self, file, target,sheet):
-        df = pd.read_excel(file, sheet_name=sheet)
-        self.train = df.drop([target], axis=1)
+    def __init__(self, file, target):
+        df = pd.read_excel(file, sheet_name="Result")  
+        print("Loaded columns:", df.columns.tolist())
+        self.train = df.drop([target], axis=1)  
+
         self.target = df[target]
 
     def drop_columns_with_nan(self, threshold):
         dropped_cols = []
         for col in self.train.columns:
             nans = self.train[col].isnull().sum()
-            length = len(self.train[col].index)
-            if 100*(nans/length) > threshold:
+            length_of_col = len(self.train[col])
+            if 100*(nans/length_of_col) > threshold:
                 dropped_cols.append(col)
         self.train=self.train.drop(columns=dropped_cols, axis=1)
         return self.train
@@ -42,8 +44,10 @@ class Preprocessing:
         self.train[col]=self.train[col].str.lower().str.strip()
         return self.train
     def replace_nan(self, col, replacement):
+        if col not in self.train.columns:
+            raise KeyError(f"Column '{col}' not found in training data")
         self.train[col] = self.train[col].fillna(replacement)
-        return self.train
+
 
     def standardize_categories(self, col, score_cutoff):
         def match_kasse(text):
@@ -60,7 +64,7 @@ class Preprocessing:
             return result[0] if result else text
 
         self.train[col] = self.train[col].apply(match_kasse)
-        return self.train
+        return self.train[col]
 
     def drop_irrelevant_cols(self, cols_to_drop):
         self.train = self.train.drop(columns=cols_to_drop,axis=1,errors="ignore")
@@ -68,10 +72,10 @@ class Preprocessing:
 
     def set_category(self, col):
         if self.train[col].dtype == 'object':
-            self.train[col] = self.train[col].astype('category')
+            self.train = self.train[col].astype('category')
             return self.train
         if self.train[col].dtype == 'int64':
-            self.train[col] = self.train[col].astype('int')
+            self.train = self.train[col].astype('int')
             return self.train
 
     def sentiment_analysis(self, col):
@@ -85,7 +89,7 @@ class Preprocessing:
 
         self.train[col] = [r['label'].lower() for r in results]
 
-        return self.train
+        return self.train[col]
 
     def rename_features(self):
         self.train=self.train.rename(columns=Preprocessing.feature_dict)

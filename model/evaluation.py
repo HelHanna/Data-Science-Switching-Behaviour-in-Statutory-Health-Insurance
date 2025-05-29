@@ -1,10 +1,35 @@
-import pandas as pd
+import re
+import sys
 import ast
 import requests
-from sklearn.feature_extraction.text import TfidfVectorizer
+import pandas as pd
 from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+# Get model name from command-line argument
+model_name = sys.argv[1] if len(sys.argv) > 1 else "unknown_model"
+
+# Define aliases for long model names 
+model_aliases = {
+    "ft:gpt-4o-mini-2024-07-18:saarland-university-computational-linguistics:health-insurance-churn:BbncVy4E": "ft_gpt4o",
+    "gpt-4o-mini-2024-07-18": "gpt4o_base",
+    "/nethome/hhelbig/Neural_Networks/LLM_tuning/merged_llama3": "llama_finetuned",
+    "meta-llama/Llama-3.1-8B-Instruct": "llama_base",
+}
+
+# Sanitize or shorten model name if not found in alias dict
+def sanitize_filename(name):
+    return re.sub(r'[^a-zA-Z0-9_\-]', '_', name)
+
+model_alias = model_aliases.get(model_name, sanitize_filename(model_name))
+
+    
+synonym_cache = {}
 
 def get_synonyms_german(word):
+    if word in synonym_cache:
+        return synonym_cache[word]
+    
     url = f"https://www.openthesaurus.de/synonyme/search?q={word}&format=application/json"
     try:
         response = requests.get(url)
@@ -14,12 +39,14 @@ def get_synonyms_german(word):
         for entry in data.get('synsets', []):
             for term in entry.get('terms', []):
                 synonyms.add(term['term'].lower())
-        if not synonyms:
-            return [word.lower()]
-        return list(synonyms)
+        result = list(synonyms) or [word.lower()]
+        synonym_cache[word] = result
+        return result
     except requests.RequestException as e:
         print(f"API error for '{word}': {e}")
+        synonym_cache[word] = [word.lower()]
         return [word.lower()]
+
 
 def get_top_n_features(shap_values_dict, n=10):
     sorted_feats = sorted(shap_values_dict.items(), key=lambda x: abs(x[1]), reverse=True)
@@ -57,13 +84,14 @@ def process_row(row, top_n=10):
     return pd.Series([matched_count, accuracy, features_syns_str])
 
 if __name__ == "__main__":
-    df = pd.read_csv("shap_llm_explanations.csv")
+    df = pd.read_csv(f"shap_llm_explanations_{model_alias}.csv")
 
-    df = df.groupby("class").head(100).reset_index(drop=True)
+    df = df.groupby("class_label").head(100).reset_index(drop=True)
 
     df[['matched_keyword_count', 'keyword_accuracy', 'features_with_synonyms']] = df.apply(process_row, axis=1)
 
     df['cosine_similarity'] = df.apply(lambda row: compute_cosine_similarity(row['shap_text'], row['llm_text']), axis=1)
 
-    df.to_csv("shap_llm_explanations_enhanced.csv", index=False)
+    df.to_csv(f"shap_llm_explanations_enhanced_{model_alias}.csv", index=False)
+
 
