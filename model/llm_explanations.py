@@ -44,8 +44,12 @@ if __name__ == "__main__":
         shap_dict_all = json.load(file)
 
     results = []
+    max_prompts = 100
     for class_label, examples in shap_dict_all.items():
+        count = 0
         for example_idx_str, shap_example_dict in examples.items():
+            if count >= max_prompts:
+                break
             example_idx = int(example_idx_str)
             shap_text, llm_text = get_llm_explanation(shap_example_dict)
             results.append({
@@ -55,6 +59,7 @@ if __name__ == "__main__":
                 "llm_text": llm_text,
                 "shap_dict_str": str(shap_example_dict)
             })
+            count +=1
 
     df_results = pd.DataFrame(results)
     df_results.to_csv("shap_llm_explanations.csv", index=False)
