@@ -23,8 +23,8 @@ class Preprocessing:
     with open("feature_dict.json", encoding="utf-8") as f:
         feature_dict = json.load(f)
 
-    def __init__(self, file, target):
-        df = pd.read_csv(file)
+    def __init__(self, file, target,sheet):
+        df = pd.read_excel(file, sheet_name=sheet)
         self.train = df.drop([target])
         self.target = df[target]
 
