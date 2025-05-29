@@ -7,3 +7,6 @@ nltk
 requests
 lightgbm 
 rapidfuzz
+matplotlib 
+seaborn
+transformers
