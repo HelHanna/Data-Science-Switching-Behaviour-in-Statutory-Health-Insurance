@@ -2,7 +2,7 @@ import openai
 import pandas as pd
 import json
 
-openai.api_key = "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"
+openai.api_key = "Your API key"
 
 def shap_to_text(shap_dict, top_n=10):
     sorted_features = sorted(shap_dict.items(), key=lambda x: abs(x[1]), reverse=True)
