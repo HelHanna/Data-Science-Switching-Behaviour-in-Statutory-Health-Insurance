@@ -1,8 +1,8 @@
 import pandas as pd
 
 # Load sheets
-questions_df = pd.read_excel("230807_Survey.xlsx", sheet_name=0)
-answers_df = pd.read_excel("230807_Survey.xlsx", sheet_name=1)
+questions_df = pd.read_excel("../data/230807_Survey.xlsx", sheet_name=0)
+answers_df = pd.read_excel("../data/230807_Survey.xlsx", sheet_name=1)
 
 # Forward fill to propagate Question, Type, Name to all rows
 questions_df["Question"] = questions_df["Question"].fillna(method="ffill")
