@@ -172,4 +172,6 @@ Focus: Machine Learning (ML) · Explainable AI (XAI) · Large Language Models (L
             echo "evaluation matrix saved."
             echo "compare models"
             python compare_models.py
-            
+
+           
+Remark: We trained the model on both Google Colab and the LST Cluster. Fine-tuning OpenAI models can be done locally (you just need an API key; note that this costs money). However, for fine-tuning LLMs from Huggingface, you will need GPU access, and Google Colab will throw an OOM error for large models. We fine-tuned the models on the LST Cluster.
