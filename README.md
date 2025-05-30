@@ -1,4 +1,4 @@
-## Explaining the Explained: Leveraging LLMs to Interpret Switching Predictions in Health Insurance**
+## Explaining the Explained: Leveraging LLMs to Interpret Switching Predictions in Health Insurance
 
 Status: Research in Progress
 Focus: Machine Learning (ML) · Explainable AI (XAI) · Large Language Models (LLMs) · Health Insurance
