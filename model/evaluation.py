@@ -13,7 +13,7 @@ model_name = sys.argv[1] if len(sys.argv) > 1 else "unknown_model"
 model_aliases = {
     "ft:gpt-4o-mini-2024-07-18:saarland-university-computational-linguistics:health-insurance-churn:BbncVy4E": "ft_gpt4o",
     "gpt-4o-mini-2024-07-18": "gpt4o_base",
-    "/nethome/hhelbig/Neural_Networks/LLM_tuning/merged_llama3": "llama_finetuned",
+    "/Data-Science-Switching-Behaviour-in-Statutory-Health-Insurance/LLM_tuning/merged_llama3": "llama_finetuned",
     "meta-llama/Llama-3.1-8B-Instruct": "llama_base",
 }
 
