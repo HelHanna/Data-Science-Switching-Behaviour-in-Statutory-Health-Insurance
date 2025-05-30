@@ -65,7 +65,7 @@ Focus: Machine Learning (ML) · Explainable AI (XAI) · Large Language Models (L
 
 - Advance research in user-centric XAI and LLM evaluation.
 
-Quick start:
+## Quick start:
 
 1. Clone the repository using:
 
@@ -79,13 +79,16 @@ Quick start:
             conda activate llm_tuning
             
             pip install -r requirements.txt
+   
+**For Openai models**:
 
-3. If you want to fine-tune a different Openai model, then please adjust the following lines in the fine-tuning_gpt.py file:
+3. If you want to fine-tune a different Openai model, then please adjust line 10 and line 36 in the fine-tuning_gpt.py file:
 
-            10 env_path = Path("Path to your Openai key")
-            36 MODEL = "gpt-4o-mini-2024-07-18"
+            env_path = Path("Path to your Openai key")
+            MODEL = "gpt-4o-mini-2024-07-18"
 
 4. You also need to add your finetuned model in the alias-dictionary in the llm_explanations.py file:
+
             model_aliases = {
                 "ft:gpt-4o-mini-2024-07-18...": "ft_gpt4o",
                 "gpt-4o-mini-2024-07-18": "gpt4o_base",
@@ -94,6 +97,8 @@ Quick start:
 
             api_key = "Your API key"
 
+**For Huggingface models**
+:
 5. If you want to fine-tune a llama-model, please go to the file fine_tuning_llama.py and fill in these lines (l.17):
 
             # set your parameters: which model to use, your access keys, directories etc.
@@ -113,19 +118,23 @@ Quick start:
           use_auth_token=True  # if required
       )
    
-8. Then add the model aliases in the file llama_explanations.py:
-
-            # Define model aliases
+7. Then add the model aliases in the file llama_explanations.py:
+   
             model_aliases = {
                 "/Data-Science-Switching-Behaviour-in-Statutory-Health-Insurance/LLM_tuning/merged_llama3": "llama_finetuned",
                 "meta-llama/Llama-3.1-8B-Instruct": "llama_base",
             }
-9. If you are using a different dataset, add your dataset in the data folder and adjust the following:
-
-            train_model.py (l.44):             pp = Preprocessing("../data/230807_Survey.xlsx", "Q18", "Result")
    
-            fine_tuning_format.py (l.4/5):     questions_df = pd.read_excel("../data/230807_Survey.xlsx", sheet_name=0)
-                                               answers_df = pd.read_excel("../data/230807_Survey.xlsx", sheet_name=1)
+9. If you are using a different dataset, add your dataset to the data folder and adjust the following:
+
+   train_model.py (l.44):
+   
+            pp = Preprocessing("../data/230807_Survey.xlsx", "Q18", "Result")
+   
+   fine_tuning_format.py (l.4/5):
+   
+            questions_df = pd.read_excel("../data/230807_Survey.xlsx", sheet_name=0)
+            answers_df = pd.read_excel("../data/230807_Survey.xlsx", sheet_name=1)
 
 10. After you made these adjustments, you can run the pipeline.sh file. Just set your Huggingface token (only required for llama not openai) and indicate which model to use:
 
