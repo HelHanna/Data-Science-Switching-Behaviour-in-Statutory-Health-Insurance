@@ -135,6 +135,15 @@ Focus: Machine Learning (ML) · Explainable AI (XAI) · Large Language Models (L
                 "meta-llama/Llama-3.1-8B-Instruct": "llama_base",
             }
    
+8. To compare performances, please go to the file compare_models.py and adjust line 7ff. depending on which models you used:
+
+            df_base = pd.read_csv("shap_llm_explanations_enhanced_gpt4o_base.csv")
+            df_ft = pd.read_csv("shap_llm_explanations_enhanced_ft_gpt4o.csv")
+            
+            # Label the source/model
+            df_base["model"] = "gpt4o_base"
+            df_ft["model"] = "ft_gpt4o"
+               
 9. If you are using a different dataset, add your dataset to the data folder and adjust the following:
 
    train_model.py (l.44):
@@ -161,5 +170,6 @@ Focus: Machine Learning (ML) · Explainable AI (XAI) · Large Language Models (L
             python evaluation.py meta-llama/Llama-3.1-8B-Instruct
             
             echo "evaluation matrix saved."
-            
+            echo "compare models"
+            python compare_models.py
             
