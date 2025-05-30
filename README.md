@@ -3,6 +3,19 @@
 Status: Research in Progress
 Focus: Machine Learning (ML) · Explainable AI (XAI) · Large Language Models (LLMs) · Health Insurance
 
+## Table of Contents
+
+- [Project Motivation](#project-motivation)
+- [Project Goals](#project-goals)
+- [Key Research Questions](#key-research-questions)
+- [Why This Matters](#why-this-matters)
+- [State of the Art Insights](#state-of-the-art-insights)
+- [Expected Impact](#expected-impact)
+- [Quick Start](#quick-start)
+  - [For OpenAI Models](#for-openai-models)
+  - [For Huggingface Models](#for-huggingface-models)
+
+
 **Project Motivation**
 
 - Health insurers face increasing churn in competitive markets.
@@ -97,8 +110,8 @@ Focus: Machine Learning (ML) · Explainable AI (XAI) · Large Language Models (L
 
             api_key = "Your API key"
 
-**For Huggingface models**
-:
+**For Huggingface models**:
+
 5. If you want to fine-tune a llama-model, please go to the file fine_tuning_llama.py and fill in these lines (l.17):
 
             # set your parameters: which model to use, your access keys, directories etc.
