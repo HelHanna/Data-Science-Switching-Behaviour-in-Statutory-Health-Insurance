@@ -46,7 +46,7 @@ def create_shap_dict(model, X):
 
 if __name__ == "__main__":
 
-    pp = Preprocessing("230807_Survey.xlsx", "Q18", "Result")
+    pp = Preprocessing("../data/230807_Survey.xlsx", "Q18", "Result")
     pp.drop_columns_with_nan(50)
 
     nan_replacements = {
