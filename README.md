@@ -1,9 +1,9 @@
-## Explaining the Explained: Leveraging LLMs to Interpret Switching Predictions in Health Insurance
+### Explaining the Explained: Leveraging LLMs to Interpret Switching Predictions in Health Insurance
 
 Status: Research in Progress
 Focus: Machine Learning (ML) · Explainable AI (XAI) · Large Language Models (LLMs) · Health Insurance
 
-## Table of Contents
+# Table of Contents
 
 - [Project Motivation](#project-motivation)
 - [Project Goals](#project-goals)
@@ -12,11 +12,8 @@ Focus: Machine Learning (ML) · Explainable AI (XAI) · Large Language Models (L
 - [State of the Art Insights](#state-of-the-art-insights)
 - [Expected Impact](#expected-impact)
 - [Quick Start](#quick-start)
-  - [For OpenAI Models](#for-openai-models)
-  - [For Huggingface Models](#for-huggingface-models)
-
-
-**Project Motivation**
+  
+# Project Motivation
 
 - Health insurers face increasing churn in competitive markets.
 
@@ -26,7 +23,7 @@ Focus: Machine Learning (ML) · Explainable AI (XAI) · Large Language Models (L
 
 - We explore how Large Language Models (LLMs) can bridge this gap by translating complex XAI outputs into accessible narratives.
 
-**Project Goals**
+# Project Goals
 
 - Augment existing XAI tools (e.g., SHAP) with LLMs to improve interpretability of churn predictions.
 
@@ -36,7 +33,7 @@ Focus: Machine Learning (ML) · Explainable AI (XAI) · Large Language Models (L
 
 - Develop methods that support transparent and user-friendly AI in the health insurance domain.
 
-**Key Research Questions**
+# Key Research Questions
 
 - **RQ1:** Which customer satisfaction dimensions most strongly predict switching intent?
 
@@ -46,7 +43,7 @@ Focus: Machine Learning (ML) · Explainable AI (XAI) · Large Language Models (L
 
 - **RQ4:** How can we automatically evaluate the quality of LLM explanations when no ground truth exists?
 
-**Why This Matters**
+# Why This Matters
 
 - Traditional ML models lack transparency—critical for trust in healthcare and insurance.
 
@@ -60,7 +57,7 @@ Focus: Machine Learning (ML) · Explainable AI (XAI) · Large Language Models (L
 
       Cosine similarity analysis
 
-**State of the Art Insights**
+# State of the Art Insights
 
 - Churn prediction models (LightGBM, decision trees, etc.) are effective but hard to interpret.
 
@@ -70,7 +67,7 @@ Focus: Machine Learning (ML) · Explainable AI (XAI) · Large Language Models (L
 
 --> We aim to close these gaps through LLM integration, fine-tuning, and automated evaluation frameworks.
 
-**Expected Impact**
+# Expected Impact
 
 - Enable more transparent and interpretable ML in health insurance churn prediction.
 
@@ -78,7 +75,7 @@ Focus: Machine Learning (ML) · Explainable AI (XAI) · Large Language Models (L
 
 - Advance research in user-centric XAI and LLM evaluation.
 
-## Quick start:
+# Quick start:
 
 1. Clone the repository using:
 
