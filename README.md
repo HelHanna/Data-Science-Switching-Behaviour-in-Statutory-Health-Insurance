@@ -1,6 +1,4 @@
-## Data-Science-Switching-Behaviour-in-Statutory-Health-Insurance
-
-**Explaining the Explained: Leveraging LLMs to Interpret Switching Predictions in Health Insurance**
+## Explaining the Explained: Leveraging LLMs to Interpret Switching Predictions in Health Insurance**
 
 Status: Research in Progress
 Focus: Machine Learning (ML) · Explainable AI (XAI) · Large Language Models (LLMs) · Health Insurance
@@ -66,3 +64,83 @@ Focus: Machine Learning (ML) · Explainable AI (XAI) · Large Language Models (L
 - Support data-driven decision-making with accessible AI explanations.
 
 - Advance research in user-centric XAI and LLM evaluation.
+
+Quick start:
+
+1. Clone the repository using:
+
+            git clone https://github.com/HelHanna/Data-Science-Switching-Behaviour-in-Statutory-Health-Insurance.git
+
+2. Create a conda environment and install the requirements:
+
+            #!/bin/bash
+ 
+            conda create --yes --name llm_tuning python=3.12.2
+            conda activate llm_tuning
+            
+            pip install -r requirements.txt
+
+3. If you want to fine-tune a different Openai model, then please adjust the following lines in the fine-tuning_gpt.py file:
+
+            10 env_path = Path("Path to your Openai key")
+            36 MODEL = "gpt-4o-mini-2024-07-18"
+
+4. You also need to add your finetuned model in the alias-dictionary in the llm_explanations.py file:
+            model_aliases = {
+                "ft:gpt-4o-mini-2024-07-18...": "ft_gpt4o",
+                "gpt-4o-mini-2024-07-18": "gpt4o_base",
+            }
+   please also insert your API key in line 18:
+
+            api_key = "Your API key"
+
+5. If you want to fine-tune a llama-model, please go to the file fine_tuning_llama.py and fill in these lines (l.17):
+
+            # set your parameters: which model to use, your access keys, directories etc.
+            MODEL_NAME = "meta-llama/Llama-3.1-8B-Instruct"
+            HF_TOKEN = "YOUR_HUGGINGFACE_TOKEN"
+            DATA_PATH = "../preprocessing/participant_prompts.jsonl"
+            OUTPUT_DIR = "OUTPUT_DIR"
+            LOG_DIR = "LOG_DIR"
+            MAX_LENGTH = 2048
+
+6. You can now either load the model via peft or use the merge_model.py file to get your fine-tuned model locally. In the merge_model.py file, indicate the model that you want to use:
+
+          base_model = AutoModelForCausalLM.from_pretrained(
+          "meta-llama/Llama-3.1-8B-Instruct", #adjust if you are using a different model
+          torch_dtype=torch.float16,
+          device_map="auto",
+          use_auth_token=True  # if required
+      )
+   
+8. Then add the model aliases in the file llama_explanations.py:
+
+            # Define model aliases
+            model_aliases = {
+                "/Data-Science-Switching-Behaviour-in-Statutory-Health-Insurance/LLM_tuning/merged_llama3": "llama_finetuned",
+                "meta-llama/Llama-3.1-8B-Instruct": "llama_base",
+            }
+9. If you are using a different dataset, add your dataset in the data folder and adjust the following:
+
+            train_model.py (l.44):             pp = Preprocessing("../data/230807_Survey.xlsx", "Q18", "Result")
+   
+            fine_tuning_format.py (l.4/5):     questions_df = pd.read_excel("../data/230807_Survey.xlsx", sheet_name=0)
+                                               answers_df = pd.read_excel("../data/230807_Survey.xlsx", sheet_name=1)
+
+10. After you made these adjustments, you can run the pipeline.sh file. Just set your Huggingface token (only required for llama not openai) and indicate which model to use:
+
+            #!/bin/bash
+            # set your Huggingface token here:
+            # export HF_TOKEN=
+            echo "Train prediction model and start SHAP generation..."
+            python train_model.py
+            
+            echo "Starting LLM explanation generation..."
+            python llm_explainations.py meta-llama/Llama-3.1-8B-Instruct
+            
+            echo "Starting evaluation..."
+            python evaluation.py meta-llama/Llama-3.1-8B-Instruct
+            
+            echo "evaluation matrix saved."
+            
+            
