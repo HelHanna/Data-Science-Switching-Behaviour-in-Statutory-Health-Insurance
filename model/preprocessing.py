@@ -40,11 +40,11 @@ class Preprocessing:
         return self.train
 
     def lowercase_strip(self, col):
-        self.train = self.train[col].str.lower().str.strip()
+        self.train[col] = self.train[col].str.lower().str.strip()
         return self.train
 
     def replace_nan(self, col, replacement):
-        self.train = self.train[col].fillna(replacement)
+        self.train[col] = self.train[col].fillna(replacement)
         return self.train
 
     def standardize_categories(self, col, score_cutoff):
@@ -70,10 +70,10 @@ class Preprocessing:
 
     def set_category(self, col):
         if self.train[col].dtype == 'object':
-            self.train = self.train[col].astype('category')
+            self.train[col] = self.train[col].astype('category')
             return self.train
         if self.train[col].dtype == 'int64':
-            self.train = self.train[col].astype('int')
+            self.train[col] = self.train[col].astype('int')
             return self.train
 
     def sentiment_analysis(self, col):
