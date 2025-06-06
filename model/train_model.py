@@ -28,12 +28,12 @@ def evaluate_model(model, X_test, y_test):
 
 def create_shap_dict(model, X):
     explainer = shap.TreeExplainer(model)
-    shap_values = explainer(X)
+    shap_values = explainer.shap_values(X)
     shap_dict_all = {}
 
-    num_classes = shap_values.shape[2]              
-    num_samples = shap_values.shape[0]                    
-    feature_names = X.columns.tolist()          
+    num_classes = shap_values.shape[2]
+    num_samples = shap_values.shape[0]
+    feature_names = X.columns.tolist()
 
     for k in range(num_classes):
         shap_dict_all[k] = {}
@@ -46,7 +46,7 @@ def create_shap_dict(model, X):
 
 if __name__ == "__main__":
 
-    pp = Preprocessing("../data/230807_Survey.xlsx", "Q18", "Result")
+    pp = Preprocessing("230807_Survey.xlsx", "Q18", "Result")
     pp.drop_columns_with_nan(50)
 
     nan_replacements = {
@@ -79,12 +79,12 @@ if __name__ == "__main__":
     pp.set_category('Q7.1.2')
     pp.set_category('Q7.1.3')
     pp.set_category('Q44')
-    
+
     pp.rename_features()
 
     X, y = pp.get_features_and_target()
     y = y.astype(int)
-    
+
     model, X_val, y_val = train_lightgbm(X, y)
     acc, f1 = evaluate_model(model, X_val, y_val)
     shap_dict_all = create_shap_dict(model, X_val)
