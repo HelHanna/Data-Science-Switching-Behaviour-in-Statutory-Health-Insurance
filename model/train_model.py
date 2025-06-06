@@ -28,7 +28,7 @@ def evaluate_model(model, X_test, y_test):
 
 def create_shap_dict(model, X):
     explainer = shap.TreeExplainer(model)
-    shap_values = explainer.shap_values(X)
+    shap_values = explainer(X)
     shap_dict_all = {}
 
     num_classes = shap_values.shape[2]
