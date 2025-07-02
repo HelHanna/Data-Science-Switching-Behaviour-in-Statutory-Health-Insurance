@@ -1,11 +1,19 @@
-## Data-Science-Switching-Behaviour-in-Statutory-Health-Insurance
-
-**Explaining the Explained: Leveraging LLMs to Interpret Switching Predictions in Health Insurance**
+# Explaining the Explained: Leveraging LLMs to Interpret Switching Predictions in Health Insurance
 
 Status: Research in Progress
 Focus: Machine Learning (ML) · Explainable AI (XAI) · Large Language Models (LLMs) · Health Insurance
 
-**Project Motivation**
+## Table of Contents
+
+- [Project Motivation](#project-motivation)
+- [Project Goals](#project-goals)
+- [Key Research Questions](#key-research-questions)
+- [Why This Matters](#why-this-matters)
+- [State of the Art Insights](#state-of-the-art-insights)
+- [Expected Impact](#expected-impact)
+- [Quick Start](#quick-start)
+  
+## Project Motivation
 
 - Health insurers face increasing churn in competitive markets.
 
@@ -15,7 +23,7 @@ Focus: Machine Learning (ML) · Explainable AI (XAI) · Large Language Models (L
 
 - We explore how Large Language Models (LLMs) can bridge this gap by translating complex XAI outputs into accessible narratives.
 
-**Project Goals**
+## Project Goals
 
 - Augment existing XAI tools (e.g., SHAP) with LLMs to improve interpretability of churn predictions.
 
@@ -25,7 +33,7 @@ Focus: Machine Learning (ML) · Explainable AI (XAI) · Large Language Models (L
 
 - Develop methods that support transparent and user-friendly AI in the health insurance domain.
 
-**Key Research Questions**
+## Key Research Questions
 
 - **RQ1:** Which customer satisfaction dimensions most strongly predict switching intent?
 
@@ -35,7 +43,7 @@ Focus: Machine Learning (ML) · Explainable AI (XAI) · Large Language Models (L
 
 - **RQ4:** How can we automatically evaluate the quality of LLM explanations when no ground truth exists?
 
-**Why This Matters**
+## Why This Matters
 
 - Traditional ML models lack transparency—critical for trust in healthcare and insurance.
 
@@ -49,7 +57,7 @@ Focus: Machine Learning (ML) · Explainable AI (XAI) · Large Language Models (L
 
       Cosine similarity analysis
 
-**State of the Art Insights**
+## State of the Art Insights
 
 - Churn prediction models (LightGBM, decision trees, etc.) are effective but hard to interpret.
 
@@ -59,10 +67,111 @@ Focus: Machine Learning (ML) · Explainable AI (XAI) · Large Language Models (L
 
 --> We aim to close these gaps through LLM integration, fine-tuning, and automated evaluation frameworks.
 
-**Expected Impact**
+## Expected Impact
 
 - Enable more transparent and interpretable ML in health insurance churn prediction.
 
 - Support data-driven decision-making with accessible AI explanations.
 
 - Advance research in user-centric XAI and LLM evaluation.
+
+## Quick start:
+
+1. Clone the repository using:
+
+            git clone https://github.com/HelHanna/Data-Science-Switching-Behaviour-in-Statutory-Health-Insurance.git
+
+2. Create a conda environment and install the requirements:
+
+            #!/bin/bash
+ 
+            conda create --yes --name llm_tuning python=3.12.2
+            conda activate llm_tuning
+            
+            pip install -r requirements.txt
+   
+**For Openai models**:
+
+3. If you want to fine-tune a different Openai model, then please adjust line 10 and line 36 in the fine-tuning_gpt.py file:
+
+            env_path = Path("Path to your Openai key")
+            MODEL = "gpt-4o-mini-2024-07-18"
+
+4. You also need to add your finetuned model in the alias-dictionary in the llm_explanations.py file:
+
+            model_aliases = {
+                "ft:gpt-4o-mini-2024-07-18...": "ft_gpt4o",
+                "gpt-4o-mini-2024-07-18": "gpt4o_base",
+            }
+   please also insert your API key in line 18:
+
+            api_key = "Your API key"
+
+**For Huggingface models**:
+
+5. If you want to fine-tune a llama-model, please go to the file fine_tuning_llama.py and fill in these lines (l.17):
+
+            # set your parameters: which model to use, your access keys, directories etc.
+            MODEL_NAME = "meta-llama/Llama-3.1-8B-Instruct"
+            HF_TOKEN = "YOUR_HUGGINGFACE_TOKEN"
+            DATA_PATH = "../preprocessing/participant_prompts.jsonl"
+            OUTPUT_DIR = "OUTPUT_DIR"
+            LOG_DIR = "LOG_DIR"
+            MAX_LENGTH = 2048
+
+6. You can now either load the model via peft or use the merge_model.py file to get your fine-tuned model locally. In the merge_model.py file, indicate the model that you want to use:
+
+          base_model = AutoModelForCausalLM.from_pretrained(
+          "meta-llama/Llama-3.1-8B-Instruct", #adjust if you are using a different model
+          torch_dtype=torch.float16,
+          device_map="auto",
+          use_auth_token=True  # if required
+      )
+   
+7. Then add the model aliases in the file llama_explanations.py:
+   
+            model_aliases = {
+                "/Data-Science-Switching-Behaviour-in-Statutory-Health-Insurance/LLM_tuning/merged_llama3": "llama_finetuned",
+                "meta-llama/Llama-3.1-8B-Instruct": "llama_base",
+            }
+   
+8. To compare performances, please go to the file compare_models.py and adjust line 7ff. depending on which models you used:
+
+            df_base = pd.read_csv("shap_llm_explanations_enhanced_gpt4o_base.csv")
+            df_ft = pd.read_csv("shap_llm_explanations_enhanced_ft_gpt4o.csv")
+            
+            # Label the source/model
+            df_base["model"] = "gpt4o_base"
+            df_ft["model"] = "ft_gpt4o"
+               
+9. If you are using a different dataset, add your dataset to the data folder and adjust the following:
+
+   train_model.py (l.44):
+   
+            pp = Preprocessing("../data/230807_Survey.xlsx", "Q18", "Result")
+   
+   fine_tuning_format.py (l.4/5):
+   
+            questions_df = pd.read_excel("../data/230807_Survey.xlsx", sheet_name=0)
+            answers_df = pd.read_excel("../data/230807_Survey.xlsx", sheet_name=1)
+
+10. After you made these adjustments, you can run the pipeline.sh file. Just set your Huggingface token (only required for llama not openai) and indicate which model to use:
+
+            #!/bin/bash
+            # set your Huggingface token here:
+            # export HF_TOKEN=
+            echo "Train prediction model and start SHAP generation..."
+            python train_model.py
+            
+            echo "Starting LLM explanation generation..."
+            python llm_explainations.py meta-llama/Llama-3.1-8B-Instruct
+            
+            echo "Starting evaluation..."
+            python evaluation.py meta-llama/Llama-3.1-8B-Instruct
+            
+            echo "evaluation matrix saved."
+            echo "compare models"
+            python compare_models.py
+
+           
+Remark: We trained the model on both Google Colab and the LST Cluster. Fine-tuning OpenAI models can be done locally (you just need an API key; note that this costs money). However, for fine-tuning LLMs from Huggingface, you will need GPU access, and Google Colab will throw an OOM error for large models. We fine-tuned the models on the LST Cluster.

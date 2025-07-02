@@ -17,7 +17,7 @@ import torch
 # set your parameters: which model to use, your access keys, directories etc.
 MODEL_NAME = "meta-llama/Llama-3.1-8B-Instruct"
 HF_TOKEN = "YOUR_HUGGINGFACE_TOKEN"
-DATA_PATH = "preprocessing/participant_prompts.jsonl"
+DATA_PATH = "../preprocessing/participant_prompts.jsonl"
 OUTPUT_DIR = "OUTPUT_DIR"
 LOG_DIR = "LOG_DIR"
 MAX_LENGTH = 2048
