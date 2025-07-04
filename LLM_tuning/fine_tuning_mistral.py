@@ -1,98 +1,125 @@
-import json
-import torch
-import numpy as np
-from datasets import Dataset
+from datasets import load_dataset
 from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
+    Trainer,
+    TrainingArguments,
+    DataCollatorForLanguageModeling,
     BitsAndBytesConfig,
-    TrainingArguments
+    TrainerCallback,
+    EarlyStoppingCallback
 )
-from peft import LoraConfig
-from trl import SFTTrainer
+from peft import LoraConfig, get_peft_model
+import torch
+import os
 
-def load_and_format_openai_jsonl(file_path):
-    data = []
-    with open(file_path, "r", encoding="utf-8") as f:
-        for line in f:
-            obj = json.loads(line)
-            text = ""
-            for message in obj["messages"]:
-                prefix = {"system": "<|system|>", "user": "<|user|>", "assistant": "<|assistant|>"}[message["role"]]
-                text += f"{prefix}\n{message['content'].strip()}\n"
-            data.append({"text": text.strip()})
-    return Dataset.from_list(data)
+# 1. Parameters
+HF_TOKEN= "Your Huggingface Token"
+MODEL_NAME = "mistralai/Mistral-7B-Instruct-v0.3"
+DATA_PATH = "../preprocessing/participant_prompts.jsonl"
+OUTPUT_DIR = "OUTPUT_DIR"
+LOG_DIR = "LOG_DIR"
+MAX_LENGTH = 2048
 
-if __name__ == '__main__':
-    model_name = "ybelkada/Mistral-7B-v0.1-bf16-sharded"
-    train_dataset = load_and_format_openai_jsonl("train_openai.jsonl")
-    val_dataset = load_and_format_openai_jsonl("val_openai.jsonl")
+# 2. Tokenizer
+tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, use_fast=True, use_auth_token=HF_TOKEN)
+tokenizer.pad_token = tokenizer.eos_token
 
-    bnb_config = BitsAndBytesConfig(
-        load_in_4bit=True,
-        bnb_4bit_quant_type="nf4",
-        bnb_4bit_compute_dtype=torch.float16,
+# 3. Quantization config (QLoRA)
+bnb_config = BitsAndBytesConfig(
+    load_in_4bit=True,
+    bnb_4bit_use_double_quant=True,
+    bnb_4bit_quant_type="nf4",
+    bnb_4bit_compute_dtype=torch.float16,
+)
+
+# 4. Load model
+model = AutoModelForCausalLM.from_pretrained(
+    MODEL_NAME,
+    device_map="auto",
+    quantization_config=bnb_config,
+    use_auth_token=HF_TOKEN,
+    torch_dtype=torch.float16
+)
+
+# 5. Apply LoRA
+lora_config = LoraConfig(
+    r=8,
+    lora_alpha=32,
+    target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
+    lora_dropout=0.05,
+    bias="none",
+    task_type="CAUSAL_LM",
+)
+model = get_peft_model(model, lora_config)
+
+# 6. Load & preprocess dataset
+dataset = load_dataset("json", data_files=DATA_PATH)["train"]
+dataset = dataset.train_test_split(test_size=0.1, seed=42)
+
+# ChatML-style format for Mistral-Instruct
+def format_example(example):
+    prompt = example["prompt"].strip()
+    completion = example["completion"].strip()
+    full_text = f"<s>[INST] {prompt} [/INST] {completion}</s>"
+    return {"text": full_text}
+
+train_dataset = dataset["train"].map(format_example)
+eval_dataset = dataset["test"].map(format_example)
+
+# Tokenization
+def tokenize(example):
+    return tokenizer(
+        example["text"],
+        truncation=True,
+        max_length=MAX_LENGTH,
+        padding="max_length"
     )
 
-    model = AutoModelForCausalLM.from_pretrained(
-        model_name,
-        quantization_config=bnb_config,
-        device_map="auto"
-    )
-    model.config.use_cache = False
+train_dataset = train_dataset.map(tokenize, remove_columns=["text"])
+eval_dataset = eval_dataset.map(tokenize, remove_columns=["text"])
 
-    tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
-    tokenizer.pad_token = tokenizer.eos_token
+data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)
 
-    peft_config = LoraConfig(
-        lora_alpha=16,
-        lora_dropout=0.1,
-        r=64,
-        bias="none",
-        task_type="CAUSAL_LM",
-        target_modules=[
-            "q_proj", "k_proj", "v_proj", "gate_proj", "up_proj", "down_proj",
-        ]
-    )
+# 7. Training arguments
+training_args = TrainingArguments(
+    output_dir=OUTPUT_DIR,
+    per_device_train_batch_size=4,
+    gradient_accumulation_steps=2,
+    num_train_epochs=5,
+    save_strategy="epoch",
+    eval_strategy="epoch",
+    save_total_limit=2,
+    logging_dir=LOG_DIR,
+    logging_steps=10,
+    logging_first_step=True,
+    learning_rate=2e-5,
+    weight_decay=0.01,
+    fp16=True,
+    report_to="tensorboard",
+    load_best_model_at_end=True,
+    metric_for_best_model="eval_loss",
+    greater_is_better=False,
+)
 
-    training_args = TrainingArguments(
-        output_dir="./results",
-        per_device_train_batch_size=4,
-        gradient_accumulation_steps=4,
-        optim="paged_adamw_32bit",
-        save_steps=10,
-        logging_steps=10,
-        learning_rate=2e-5,
-        fp16=True,
-        max_grad_norm=0.3,
-        num_train_epochs=10,
-        warmup_ratio=0.03,
-        group_by_length=False,
-        lr_scheduler_type="constant",
-        gradient_checkpointing=True,
-        save_strategy="steps",
-        evaluation_strategy="steps",
-        save_total_limit=2,
-    )
+# 9. Trainer setup
+trainer = Trainer(
+    model=model,
+    tokenizer=tokenizer,
+    args=training_args,
+    train_dataset=train_dataset,
+    eval_dataset=eval_dataset,
+    data_collator=data_collator,
+    callbacks=[EarlyStoppingCallback(early_stopping_patience=2)]
+)
 
-    trainer = SFTTrainer(
-        model=model,
-        train_dataset=train_dataset,
-        eval_dataset=val_dataset,
-        peft_config=peft_config,
-        processing_class=tokenizer,
-        args=training_args,
-    )
+# 10. Train
+trainer.train()
+print("Training abgeschlossen")
 
-    for name, module in trainer.model.named_modules():
-        if "norm" in name:
-            module = module.to(torch.float32)
+# 11. Save
+trainer.save_model(OUTPUT_DIR)
+tokenizer.save_pretrained(OUTPUT_DIR)
+model.save_pretrained(OUTPUT_DIR)
+print(f"Fine-tuning complete. Model saved to {OUTPUT_DIR}")
 
-    trainer.train()
-
-    #save model
-    OUTPUT_DIR = "./results"
-    trainer.save_model(OUTPUT_DIR)
-    tokenizer.save_pretrained(OUTPUT_DIR)
-    model.save_pretrained(OUTPUT_DIR)
-    print(f"Fine-tuning complete. Model saved to {OUTPUT_DIR}")

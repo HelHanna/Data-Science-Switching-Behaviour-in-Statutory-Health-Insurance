@@ -3,6 +3,8 @@ import sys
 import ast
 import requests
 import pandas as pd
+import json
+import os
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
 
@@ -13,8 +15,17 @@ model_name = sys.argv[1] if len(sys.argv) > 1 else "unknown_model"
 model_aliases = {
     "ft:gpt-4o-mini-2024-07-18:saarland-university-computational-linguistics:health-insurance-churn:BbncVy4E": "ft_gpt4o",
     "gpt-4o-mini-2024-07-18": "gpt4o_base",
-    "/Data-Science-Switching-Behaviour-in-Statutory-Health-Insurance/LLM_tuning/merged_llama3": "llama_finetuned",
+    "merged_llama3": "llama_finetuned",
+    "llama_finetuned_5": "llama_finetuned_5",
     "meta-llama/Llama-3.1-8B-Instruct": "llama_base",
+    "Qwen/Qwen1.5-7B-Chat": "qwen_base",
+    "mistralai/Mistral-7B-Instruct-v0.3": "mistral_base",
+    "mistral_finetuned":"mistral_finetuned",
+    "mistral_finetuned_5":"mistral_finetuned_5",
+    "qwen_finetuned": "qwen_finetuned",
+    "qwen_finetuned_5": "qwen_finetuned_5",
+    
+    
 }
 
 # Sanitize or shorten model name if not found in alias dict
@@ -23,8 +34,16 @@ def sanitize_filename(name):
 
 model_alias = model_aliases.get(model_name, sanitize_filename(model_name))
 
-    
-synonym_cache = {}
+
+# --- Persistent cache laden (wenn vorhanden) ---
+cache_filename = "synonym_cache.json"
+if os.path.exists(cache_filename):
+    with open(cache_filename, "r", encoding="utf-8") as f:
+        synonym_cache = json.load(f)
+else:
+    synonym_cache = {}
+
+import time
 
 def get_synonyms_german(word):
     if word in synonym_cache:
@@ -41,6 +60,10 @@ def get_synonyms_german(word):
                 synonyms.add(term['term'].lower())
         result = list(synonyms) or [word.lower()]
         synonym_cache[word] = result
+        
+        # Pause nur nach echtem API-Call
+        time.sleep(1)
+        
         return result
     except requests.RequestException as e:
         print(f"API error for '{word}': {e}")
@@ -84,14 +107,16 @@ def process_row(row, top_n=10):
     return pd.Series([matched_count, accuracy, features_syns_str])
 
 if __name__ == "__main__":
-    df = pd.read_csv(f"shap_llm_explanations_{model_alias}.csv")
+    df = pd.read_csv(f"shap_llm_explanations_100_less_token_{model_alias}.csv")
 
-    df = df.groupby("class_label").head(100).reset_index(drop=True)
+    df = df.groupby("predicted_class").head(100).reset_index(drop=True)
 
     df[['matched_keyword_count', 'keyword_accuracy', 'features_with_synonyms']] = df.apply(process_row, axis=1)
 
     df['cosine_similarity'] = df.apply(lambda row: compute_cosine_similarity(row['shap_text'], row['llm_text']), axis=1)
 
-    df.to_csv(f"shap_llm_explanations_enhanced_{model_alias}.csv", index=False)
+    df.to_csv(f"shap_llm_explanations_enhanced_less_token_{model_alias}.csv", index=False)
 
-
+    # --- Cache speichern ---
+    with open(cache_filename, "w", encoding="utf-8") as f:
+        json.dump(synonym_cache, f, ensure_ascii=False, indent=2)

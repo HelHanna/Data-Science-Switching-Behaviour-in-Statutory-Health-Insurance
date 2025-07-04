@@ -17,7 +17,7 @@ import torch
 # set your parameters: which model to use, your access keys, directories etc.
 MODEL_NAME = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
 HF_TOKEN = "YOUR_HUGGINGFACE_TOKEN"
-DATA_PATH = "preprocessing/participant_prompts.jsonl"
+DATA_PATH = "../preprocessing/participant_prompts.jsonl"
 OUTPUT_DIR = "OUTPUT_DIR"
 LOG_DIR = "LOG_DIR"
 MAX_LENGTH = 2048

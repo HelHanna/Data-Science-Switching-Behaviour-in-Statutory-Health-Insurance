@@ -1,38 +1,80 @@
+import os
 import sys
 import json
-import os
+import re
+import argparse
 import pandas as pd
 import torch
-import re
 
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import (
+    AutoTokenizer,
+    AutoModelForCausalLM,
+    BitsAndBytesConfig
+)
+from peft import PeftModel
 
-# Load command-line argument
-model_name = sys.argv[1] if len(sys.argv) > 1 else "unknown_model"
+# ==================== ARGUMENTE PARSEN ====================
 
-# Define model aliases
-model_aliases = {
-    "llama_finetuned_5": "llama_finetuned_5",
-    "meta-llama/Llama-3.1-8B-Instruct": "llama_base",
-}
-model_alias = model_aliases.get(model_name, re.sub(r'[^a-zA-Z0-9_\-]', '_', model_name))
+parser = argparse.ArgumentParser()
+parser.add_argument("model_name", type=str, help="Hugging Face model name or local path")
+parser.add_argument("--use_lora", action="store_true", help="Whether to apply LoRA adapter")
+args = parser.parse_args()
 
-# Optional Hugging Face token
+model_name = args.model_name
+enable_lora = args.use_lora
+
+# ==================== KONFIGURATION ====================
+
 hf_token = os.getenv("HUGGINGFACE_TOKEN", None)
 
-# Load model: local directory or Hugging Face repo
-if os.path.isdir(model_name):
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForCausalLM.from_pretrained(
-        model_name, device_map="auto", torch_dtype=torch.float16
-    )
-else:
-    tokenizer = AutoTokenizer.from_pretrained(model_name, use_auth_token=hf_token)
-    model = AutoModelForCausalLM.from_pretrained(
-        model_name, device_map="auto", torch_dtype=torch.float16, use_auth_token=hf_token
-    )
+bnb_config = BitsAndBytesConfig(
+    load_in_4bit=True,
+    bnb_4bit_use_double_quant=True,
+    bnb_4bit_quant_type="nf4",
+    bnb_4bit_compute_dtype=torch.float16,
+)
 
-# Format SHAP values into natural language
+lora_path = "logs/mistral_output_5"
+
+model_aliases = {
+    "mistralai/Mistral-7B-Instruct-v0.3": "mistral_base",
+    lora_path: "mistral_finetuned_5",
+}
+
+#model_alias = model_aliases.get(model_name, re.sub(r'[^a-zA-Z0-9_\-]', '_', model_name))
+base_alias = model_aliases.get(model_name, re.sub(r'[^a-zA-Z0-9_\-]', '_', model_name))
+model_alias = base_alias.replace("_base", "_finetuned_5") if enable_lora else base_alias
+
+# ==================== MODELL LADEN ====================
+
+base_model = AutoModelForCausalLM.from_pretrained(
+    model_name,
+    trust_remote_code=True,
+    device_map="auto",
+    torch_dtype=torch.float16,
+    use_auth_token=hf_token,
+    quantization_config=bnb_config,
+)
+
+if enable_lora:
+    model = PeftModel.from_pretrained(
+        base_model,
+        lora_path,
+        device_map="auto",
+        torch_dtype=torch.float16,
+    )
+    tokenizer_path = lora_path
+else:
+    model = base_model
+    tokenizer_path = model_name
+
+tokenizer = AutoTokenizer.from_pretrained(
+    tokenizer_path,
+    trust_remote_code=True
+)
+
+# ==================== FUNKTIONEN ====================
+
 def shap_to_text(shap_dict, top_n=10):
     sorted_features = sorted(shap_dict.items(), key=lambda x: abs(x[1]), reverse=True)
     top_features = sorted_features[:top_n]
@@ -43,7 +85,6 @@ def shap_to_text(shap_dict, top_n=10):
         parts.append(f'"{readable_feature}" with {value:.2f} ({direction})')
     return "The most important features are: " + ", ".join(parts) + "."
 
-# Build the full prompt
 def build_prompt(shap_text, class_label):
     system_message = (
         "You are a helpful assistant that explains how different features influence "
@@ -56,7 +97,6 @@ def build_prompt(shap_text, class_label):
     )
     return system_message + "\n" + user_message
 
-# Generate explanation
 def get_llm_explanation(shap_example_dict, class_label):
     shap_text = shap_to_text(shap_example_dict)
     prompt = build_prompt(shap_text, class_label)
@@ -66,7 +106,7 @@ def get_llm_explanation(shap_example_dict, class_label):
         **inputs,
         max_new_tokens=300,
         do_sample=False,
-        temperature=0
+        temperature=0.0,
     )
 
     full_output = tokenizer.decode(outputs[0], skip_special_tokens=True)
@@ -75,6 +115,7 @@ def get_llm_explanation(shap_example_dict, class_label):
     return shap_text, llm_text
 
 # ==================== MAIN ====================
+
 if __name__ == "__main__":
     with open("shap_dict_predicted.json", "r", encoding="utf-8") as file:
         shap_dict_all = json.load(file)
@@ -83,7 +124,6 @@ if __name__ == "__main__":
     max_examples = 100
     count = 0
 
- 
     for example_idx_str, shap_example_dict in shap_dict_all.items():
         if count >= max_examples:
             break
@@ -91,11 +131,9 @@ if __name__ == "__main__":
         example_idx = int(example_idx_str)
         shap_values_only = shap_example_dict["shap_values"]
         predicted_class = shap_example_dict["predicted_class"]
-        predicted_class_label = shap_example_dict.get("predicted_class_label", str(predicted_class))  # fallback
-
+        predicted_class_label = shap_example_dict.get("predicted_class_label", str(predicted_class))
 
         shap_text, llm_text = get_llm_explanation(shap_values_only, predicted_class_label)
-
 
         print(f"\n--- Example {example_idx} ---")
         print(f"Predicted Class: {predicted_class}")
@@ -111,10 +149,9 @@ if __name__ == "__main__":
             "predicted_class": predicted_class,
             "shap_text": shap_text,
             "llm_text": llm_text,
-            "shap_dict_str": str(shap_values_only)
+            "shap_dict_str": str(shap_values_only),
         })
         count += 1
-
 
     df_results = pd.DataFrame(results)
     df_results.to_csv(f"shap_llm_explanations_100_less_token_{model_alias}.csv", index=False)
