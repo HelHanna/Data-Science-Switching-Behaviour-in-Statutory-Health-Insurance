@@ -124,14 +124,14 @@ Focus: Machine Learning (ML) · Explainable AI (XAI) · Large Language Models (L
 
 
 
-## Experiments
+# Experiments
 
-### Dataset
+## Dataset
 
 - Insurance satisfaction survey (Boston Consulting Group).  
 - 2018 participants, 360 features (demographics, satisfaction, etc.).
 
-### Baseline Models
+## Baseline Models
 
 In our experiment we used three free baseline models:
 
@@ -143,7 +143,7 @@ In our experiment we used three free baseline models:
 
 However, we also provide code for fine-tuning OpenAi models.
 
-### Experimental Setup
+## Experimental Setup
 
 - **Training Args**:
   - Epochs: 5 and 20 (with early stopping)
@@ -153,7 +153,7 @@ However, we also provide code for fine-tuning OpenAi models.
 
 ---
 
-## Results Summary
+# Results Summary
 
 - **Findings**:  
   - Mistral had highest keyword accuracy in all settings.  
@@ -171,7 +171,7 @@ However, we also provide code for fine-tuning OpenAi models.
 
 ---
 
-## Limitations
+# Limitations
 
 - No access to ground-truth explanation texts.
 - Fine-tuning was on a proxy classification task.
@@ -181,7 +181,7 @@ However, we also provide code for fine-tuning OpenAi models.
 
 ---
 
-## Conclusion
+# Conclusion
 
 - Pipeline combines SHAP with LLMs for explainable churn prediction.
 - Keyword matching ensures feature completeness.
@@ -194,7 +194,7 @@ However, we also provide code for fine-tuning OpenAi models.
 
 
 
-## Quick start:
+# Quick start:
 
 1. Clone the repository using:
 
