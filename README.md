@@ -75,6 +75,22 @@ Focus: Machine Learning (ML) · Explainable AI (XAI) · Large Language Models (L
 
 - Advance research in user-centric XAI and LLM evaluation.
 
+## Pipeline
+![Pipeline](pictures/pipeline.png)
+
+## Keyword Accuracy
+![Keyword](pictures/keyword_pipeline.png)
+
+## Cosine Similarity
+![Cosine](pictures/cosine_similarity_pipeline.png)
+
+
+## Training and Evaluation
+![Loss](pictures/loss_curves.png)
+
+## Results
+![Results](pictures/accuracy.png)
+
 ## Quick start:
 
 1. Clone the repository using:
