@@ -8,7 +8,6 @@ Focus: Machine Learning (ML) · Explainable AI (XAI) · Large Language Models (L
 - [Project Motivation](#project-motivation)
 - [Project Goals](#project-goals)
 - [Key Research Questions](#key-research-questions)
-- [Why This Matters](#why-this-matters)
 - [State of the Art Insights](#state-of-the-art-insights)
 - [Expected Impact](#expected-impact)
 - [Quick Start](#quick-start)
@@ -57,39 +56,133 @@ Focus: Machine Learning (ML) · Explainable AI (XAI) · Large Language Models (L
 
       Cosine similarity analysis
 
-## State of the Art Insights
 
-- Churn prediction models (LightGBM, decision trees, etc.) are effective but hard to interpret.
 
-- SHAP provides local feature attribution but isn't easily understood by non-experts.
 
-- LLMs can translate complex insights into narratives, but quality and reliability remain open questions.
 
---> We aim to close these gaps through LLM integration, fine-tuning, and automated evaluation frameworks.
 
-## Expected Impact
 
-- Enable more transparent and interpretable ML in health insurance churn prediction.
+# SHAP-Based LLM Explanation Pipeline for Insurance Churn Prediction
 
-- Support data-driven decision-making with accessible AI explanations.
+## Model Architecture
 
-- Advance research in user-centric XAI and LLM evaluation.
+- **Prediction Model**:  
+  - LightGBM used for churn prediction.  
+  - Employs leaf-wise tree growth for high accuracy (Wang et al., 2017).  
+  - Loss function: multi-class cross-entropy.
+
+- **Explanations with SHAP**:  
+  - SHAP used to compute local feature importance.  
+  - Features with SHAP value > 0.1 passed to the LLM.  
+  - LLM generates human-readable explanations.
 
 ## Pipeline
 ![Pipeline](pictures/pipeline.png)
+---
 
+## Data Preprocessing
+
+- Dropped columns with >50% missing values.
+- Filled missing values:  
+  - `"keine Angabe"` for text, `99` for integers.  
+- Spell-check performed on text columns.  
+- Sentiment analysis (NLTK) on free-text ratings → categorical sentiment.
+- Removed columns duplicating target variable to prevent data leakage.
+
+
+---
+
+## Evaluation Metrics
+
+- **Keyword Matching**:  
+  - Ensures all relevant features are mentioned.  
+  - Synonyms from OpenThesaurus included.  
+  - Metric:  
+    ```
+    Keyword Coverage = (# mentioned keywords) / (total keywords)
+    ```
 ## Keyword Accuracy
 ![Keyword](pictures/keyword_pipeline.png)
 
+- **Cosine Similarity**:  
+  - Measures semantic similarity between LLM-generated text and simple SHAP templates.  
+  - Formula:  
+    ```
+    cos(θ) = (A·B) / (||A|| * ||B||)
+    ```
+
+
 ## Cosine Similarity
 ![Cosine](pictures/cosine_similarity_pipeline.png)
+---
 
+
+
+## Experiments
+
+### Dataset
+
+- Insurance satisfaction survey (Boston Consulting Group).  
+- 2018 participants, 360 features (demographics, satisfaction, etc.).
+
+### Baseline Models
+
+| Model     | Params | Vocab | Layers | Heads |
+|-----------|--------|--------|--------|--------|
+| Mistral   | 7B     | 32k    | 32     | 32     |
+| LLaMA 3.1 | 8B     | 32k    | 32     | 32     |
+| Qwen 1.5  | 7B     | 151k   | 32     | 32     |
+
+### Experimental Setup
+
+- **Training Args**:
+  - Epochs: 5 and 20 (with early stopping)
+  - Learning Rate: `2e-5`
+  - Batch Size: 4
+  - Weight Decay: `0.01`
+
+---
+
+## Results Summary
+
+- **Findings**:  
+  - Mistral had highest keyword accuracy in all settings.  
+  - Qwen consistently had highest cosine similarity.  
+  - LLaMA improved most with extended training.
+- **Training Duration Impact**:
+  - 5 epochs: no significant improvement.
+  - 20 epochs: LLaMA showed strong gains; others stagnated or regressed.
 
 ## Training and Evaluation
 ![Loss](pictures/loss_curves.png)
 
 ## Results
 ![Results](pictures/accuracy.png)
+
+---
+
+## Limitations
+
+- No access to ground-truth explanation texts.
+- Fine-tuning was on a proxy classification task.
+- LLMs sometimes misinterpret directionality (positive/negative impact).
+- Evaluation lacks fluency/logical consistency metrics.
+- SHAP templates were overly simple → potential mismatch with natural explanations.
+
+---
+
+## Conclusion
+
+- Pipeline combines SHAP with LLMs for explainable churn prediction.
+- Keyword matching ensures feature completeness.
+- Cosine similarity assesses semantic accuracy.
+- Fine-tuning improved LLaMA but not Qwen or Mistral.
+- Further work needed on natural explanation generation and evaluation.
+
+
+
+
+
 
 ## Quick start:
 
