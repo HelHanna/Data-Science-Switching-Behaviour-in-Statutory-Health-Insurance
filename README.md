@@ -109,15 +109,13 @@ Focus: Machine Learning (ML) · Explainable AI (XAI) · Large Language Models (L
 - **Keyword Matching**:  
   - Ensures all relevant features are mentioned.  
   - Synonyms from OpenThesaurus included.  
-  - Metric:  
-    $$ \text{Keyword Coverage} = \frac{\text{# mentioned keywords}}{\text{total keywords}} $$
+ 
 
 ![Keyword](pictures/keyword_pipeline.png)
 
 - **Cosine Similarity**:  
   - Measures semantic similarity between LLM-generated text and simple SHAP templates.  
-  - Formula:  
-    $$ \cos(\theta) = \frac{A \cdot B}{\|A\| \cdot \|B\|} $$
+
 
 ![Cosine](pictures/cosine_similarity_pipeline.png)
 ---
