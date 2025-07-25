@@ -87,7 +87,7 @@ Focus: Machine Learning (ML) · Explainable AI (XAI) · Large Language Models (L
   - LLM generates human-readable explanations.
 
 ## Pipeline
-![Pipeline](pictures/pipeline.png)
+![Pipeline](pictures/workflow_upd.png)
 ---
 
 ## Data Preprocessing
